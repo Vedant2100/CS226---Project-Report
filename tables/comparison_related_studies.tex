@@ -1,0 +1,18 @@
+\begin{table*}[t]
+  \centering
+  \caption{Comparison of Change Detection and Distributed Framework Methods}
+  \label{tab:method-comparison}
+  \small
+  \begin{tabularx}{\textwidth}{@{} >{\hsize=1.0\hsize\RaggedRight}X >{\hsize=1.2\hsize\RaggedRight}X >{\hsize=0.8\hsize\RaggedRight}X >{\hsize=1.0\hsize\RaggedRight}X @{}}
+    \toprule
+    \textbf{Category} & \textbf{Main Idea} & \textbf{Unit of analysis} & \textbf{Limitations} \\ 
+    \midrule
+    Statistical Time-Series Modeling\cite{bfast, nrt-anomalies} & Work around seasonal pattern & Per-pixel of image & Require large historical baseline \\ \addlinespace
+    Spectral \& Species-Specific   \cite{ts-sentinel,jamali2024, bark-beetle} & Tailored method based on forest type or tree species & Multi-index, Sentinel-2 & Can lead to overfitting in a specific region. Unable to give a general model\\ \addlinespace
+    Unsupervised Learning  \cite{ndvi, dl-forest, Zhang25082025, Prithvi-100M-preprint} & Pre-training on massive unlabeled data to understand `normal' behavior before fine-tuning for specific tasks &  band sequences; NDVI index trends & Requires repeated access to large datasets \\ \addlinespace
+    Geospatial Big-Data Systems \cite{rdpro, icde-geospatial} & Distributed storage, indexing, and raster processing & Full space $\times$ time archives & Strong scalability and I/O guarantees \\ 
+    \bottomrule
+   \end{tabularx}
+\end{table*}
+
+% removed  Learning healthy pattern and than finding anomaly
