@@ -1,0 +1,30 @@
+\section{On-Demand Anomaly Detection and Inference}
+\label{sec:on_demand_detection}
+
+To ensure the system remains responsive and memory-efficient, the transformation and detection logic are not pre-calculated; instead, they are executed on-the-fly for the specific spatiotemporal window requested by the user.
+
+\subsection{Query-Triggered Vegetation Index Derivation}
+\label{subsec:on_demand_indices}
+When a user submits a query for a specific area and time range, the system first identifies the relevant candidate scenes using the spatial indices described in the previous section. The following process is then executed dynamically:
+\begin{itemize}
+    \item \textbf{Dynamic Data Retrieval:} Using the metadata stored in PostgreSQL/PostGIS, the system performs partial reads of the Cloud Optimized GeoTIFFs (COGs) stored in S3 to fetch only the required spectral bands (Red, NIR, and SWIR).
+    \item \textbf{On-the-fly Computation:} To compute spectral indices for the queried window we will use PySpark. This transforms raw reflectance into biological proxies:
+    \begin{equation}
+        NDVI = \frac{NIR - Red}{NIR + Red}, \quad NDMI = \frac{NIR - SWIR1}{NIR + SWIR1}
+    \end{equation}
+    \item \textbf{Forest Masking:} The computation is restricted to forest pixels by performing a spatial join with the ESA WorldCover 10m land cover dataset at runtime.
+\end{itemize}
+
+\subsection{Standardized Z-Score Anomaly Logic}
+\label{subsec:z_score_logic}
+Immediately following index derivation, the anomaly detection logic is applied to the filtered dataset to identify significant vegetation stress.
+
+\begin{itemize}
+    \item \textbf{Statistical Normalization:} For every pixel in the user's query timeframe, the observed index value is compared against a pre-computed historical baseline (2015--2025). The Z-score is calculated as:
+    \begin{equation}
+        Z = \frac{\text{Observed Value} - \mu_{monthly}}{\sigma_{monthly}}
+    \end{equation}
+    where $\mu_{monthly}$ and $\sigma_{monthly}$ are the mean and standard deviation for that specific pixel and month.
+    \item \textbf{Anomaly Thresholding:} A pixel is flagged as an anomaly if $Z < -2.0$, signaling a statistically rare decline in vegetation health relative to historical seasonal patterns.
+    \item \textbf{Query Output:} The system returns the results as either a \textit{Raster Anomaly Map} for spatial visualization or a \textit{Tabular Event Dataset} in Parquet format, providing immediate feedback for the user's specific query.
+\end{itemize}

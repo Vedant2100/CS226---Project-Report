@@ -9,6 +9,7 @@ Ensures index values represent true forest dynamics by filtering non-forest data
 \end{itemize}
 
 \subsection{Vegetation Index Derivation}
+\label{subsec:vi_derivation}
 Computes spectral indices from Harmonized Landsat--Sentinel-2 (HLS) data using PySpark.
 // formual
 \begin{itemize}
@@ -48,3 +49,4 @@ Establishes a historical baseline to identify deviations in vegetation behavior.
 % \subsection{Baseline Construction for Anomaly Detection}
 % For each forest pixel, a multi-year baseline is computed by aggregating monthly NDVI and NDMI values across a fixed historical period (e.g., a 10-year period). The baseline includes the mean and standard deviation for each month, forming a climatological signature of normal vegetation behavior. 
 % % This structure mirrors the ``historical seasonal baseline'' approach used in near-real-time anomaly frameworks \cite{nrt-anomalies}, where deviations from expected monthly patterns are converted into standardized anomaly scores. The resulting baselines serve as the foundation for detecting statistically significant vegetation stress preceding disease outbreaks.
+
