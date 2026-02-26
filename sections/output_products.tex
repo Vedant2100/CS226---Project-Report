@@ -6,8 +6,14 @@
 % \subsection{Tabular and Spatiotemporal Event Records}
 % In addition to raster outputs, the system generates tabular anomaly event records stored in Parquet or GeoParquet format. Each record contains pixel identifiers, timestamps, anomaly magnitudes, and spatial coordinates. These structured outputs support downstream statistical analysis, temporal aggregation, and integration with external datasets such as USFS bark beetle outbreak maps. The use of columnar storage formats aligns with big-data principles and facilitates scalable querying across millions of observations.
 
-% \subsection{Interactive Visualization and Exploration}
-% To support interpretation and exploratory analysis, anomaly products can be visualized using tools such as QGIS, Kepler.gl, or lightweight web-mapping frameworks. Raster anomaly layers can be overlaid with forest masks, land-cover maps, or ground-truth outbreak polygons to assess spatial correspondence. This visualization approach mirrors the multi-layer validation workflows described in the literature, such as the GLAD accuracy assessment pipeline \cite{isprs-cube}, where forest/no-forest classifications, habitat layers, and canopy cover thresholds are jointly examined to understand context. By enabling similar multi-layer exploration, the system helps analysts contextualize anomaly patterns and evaluate their ecological significance.
+\subsection{Interactive Visualization and Forest Health Dashboard}
+To facilitate exploratory analysis and lead-lag verification, we developed a lightweight interactive dashboard using Python. This tool allows users to select specific forest regions and timeframes to query the anomaly detection model. The dashboard provides three primary visual outputs:
+\begin{enumerate}
+    \item \textbf{Anomaly Statistics}: Displays real-time Z-scores for the selected period, indicating the intensity of spectral deviations.
+    \item \textbf{Temporal Trend Analysis}: Plots the NDVI profile against historical baselines to contextualize current stress levels.
+    \item \textbf{Spectral Timelapse}: Renders an animated sequence of satellite imagery (RGB and NDVI) for the selected timeframe, enabling visual confirmation of canopy stress or disturbance events.
+\end{enumerate}
+By integrating these visual products into a single interface, the system supports a more intuitive interpretation of the statistical anomalies, bridging the gap between raw data processing and ecological decision-making.
 
-% \subsection{Interpretability and Communication of Results}
-% The final outputs are designed to support interpretability rather than automated decision-making. Anomaly maps and event tables provide evidence of unusual vegetation behavior, but their ecological meaning must be evaluated alongside environmental context, land-cover information, and outbreak records. This emphasis on interpretability reflects the caution expressed in both the literature survey and project proposal, which note that anomalies may arise from multiple factors and should be treated as exploratory signals rather than definitive diagnoses.
+\subsection{Interpretability and Communication of Results}
+The final outputs are designed to support interpretability rather than automated decision-making. Anomaly maps and event tables provide evidence of unusual vegetation behavior, but their ecological meaning must be evaluated alongside environmental context, land-cover information, and outbreak records. This emphasis on interpretability reflects the caution expressed in both the literature survey and project proposal, which note that anomalies may arise from multiple factors and should be treated as exploratory signals rather than definitive diagnoses.
