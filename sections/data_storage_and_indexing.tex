@@ -39,4 +39,4 @@ Final output: a centralized metadata table that links:
     \item \textbf{Time} $\rightarrow$ Acquisition date.
     \item \textbf{Link} $\rightarrow$ File path or S3 URL to the COG.
 \end{itemize}
-Stored in PostgreSQL with PostGIS indexing. Queried using SQL for spatiotemporal filtering. Powers downstream analytics like time series extraction and anomaly detection.
+Stored in PostgreSQL with PostGIS indexing. Queried using SQL for spatiotemporal filtering. This centralized index serves as an entry point for the downstream data transformation pipeline, enabling the efficient retrieval of filtered pixel-level reflectance data for feature computation as described in Section \ref{sec:data_transformation}.

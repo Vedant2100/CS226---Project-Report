@@ -1,7 +1,8 @@
 \section{Data Transformation}
+\label{sec:data_transformation}
 
 \subsection{Forest Mask Application and Quality Filtering}
-Ensures index values represent true forest dynamics by filtering non-forest data.
+Following the spatiotemporal ingestion and indexing phase, the raw reflectance data is retrieved from the object storage using the database index. To ensure index values represent true forest dynamics, a sequence of spatial filtering and quality masking is applied dynamically for every query. This "late-binding" transformation approach avoids the high storage costs of maintaining pre-processed forest-masked datasets while ensuring that the latest land-cover masks and quality algorithms are always utilized during analysis.
 \begin{itemize}
     \item \textbf{Data Source:} Uses ESA WorldCover 10m land cover map.
     \item \textbf{Method:} Apache Sedona spatial join between HLS pixel centroids and WorldCover polygons.
