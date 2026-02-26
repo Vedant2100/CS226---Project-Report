@@ -1,0 +1,13 @@
+\section{Output Products and Visualization}
+
+\subsection{Raster-Based Anomaly Maps}
+The system produces spatially explicit anomaly maps that highlight regions exhibiting significant negative deviations from their historical baselines. These maps are stored as Cloud-Optimized GeoTIFFs (COGs), enabling efficient visualization and retrieval without loading entire rasters into memory. Each anomaly raster represents a specific month or year and encodes standardized Z-scores, allowing analysts to identify clusters of early stress. This output format is consistent with modern geospatial monitoring pipelines, such as those used in GLAD \cite{isprs-cube} and Digital Earth \cite{bark-beetle}, which rely on cloud-native rasters for large-scale forest disturbance assessment.
+
+\subsection{Tabular and Spatiotemporal Event Records}
+In addition to raster outputs, the system generates tabular anomaly event records stored in Parquet or GeoParquet format. Each record contains pixel identifiers, timestamps, anomaly magnitudes, and spatial coordinates. These structured outputs support downstream statistical analysis, temporal aggregation, and integration with external datasets such as USFS bark beetle outbreak maps. The use of columnar storage formats aligns with big-data principles and facilitates scalable querying across millions of observations.
+
+\subsection{Interactive Visualization and Exploration}
+To support interpretation and exploratory analysis, anomaly products can be visualized using tools such as QGIS, Kepler.gl, or lightweight web-mapping frameworks. Raster anomaly layers can be overlaid with forest masks, land-cover maps, or ground-truth outbreak polygons to assess spatial correspondence. This visualization approach mirrors the multi-layer validation workflows described in the literature, such as the GLAD accuracy assessment pipeline \cite{isprs-cube}, where forest/no-forest classifications, habitat layers, and canopy cover thresholds are jointly examined to understand context. By enabling similar multi-layer exploration, the system helps analysts contextualize anomaly patterns and evaluate their ecological significance.
+
+\subsection{Interpretability and Communication of Results}
+The final outputs are designed to support interpretability rather than automated decision-making. Anomaly maps and event tables provide evidence of unusual vegetation behavior, but their ecological meaning must be evaluated alongside environmental context, land-cover information, and outbreak records. This emphasis on interpretability reflects the caution expressed in both the literature survey and project proposal, which note that anomalies may arise from multiple factors and should be treated as exploratory signals rather than definitive diagnoses.
