@@ -13,8 +13,6 @@
     \end{itemize}
 \end{itemize}
 
-\subsection{Ingestion and Catalog Building}
-
 \subsection{Batch Ingestion (ETL Pipeline)}
 A PySpark + Rasterio pipeline processes raw HLS files. For each image:
 \begin{enumerate}
@@ -32,7 +30,7 @@ Bounding box is read from each COG using Rasterio.
     \item Enables fast spatial queries like \texttt{ST\_Intersects} and \texttt{ST\_Contains}.
 \end{itemize}
 
-\section{Spatiotemporal Data Cube Index}
+\subsection{Spatiotemporal Data Cube Index}
 Final output: a centralized metadata table that links:
 \begin{itemize}
     \item \textbf{Space} $\rightarrow$ Bounding box geometry.

@@ -2,7 +2,7 @@
 \label{sec:data_transformation}
 When a user submits a query for a specific time range, the system dynamically retrieves the relevant data by first identifying candidate scenes using the spatial indices. It then uses the metadata in PostgreSQL/PostGIS to perform partial reads of the Cloud Optimized GeoTIFFs (COGs) stored in S3, fetching only the required spectral bands (Red, NIR, and SWIR).
 
-\newpage
+
 
 \subsection{Forest Mask Application and Quality Filtering}
 % Following the spatiotemporal ingestion and indexing phase, the raw reflectance data is retrieved from the object storage using the database index. To ensure index values represent true forest dynamics, a sequence of spatial filtering and quality masking is applied dynamically for every query.
