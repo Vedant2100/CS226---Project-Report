@@ -1,0 +1,60 @@
+\section{Evaluation Plan}
+
+The project will be evaluated along three primary dimensions to assess both computational performance in a Big Data environment and the analytical rigor of early vegetation anomaly detection.
+
+\subsection{Scalability Evaluation (Big Data Performance)}
+
+To evaluate scalability, the full pipeline will be executed on progressively increasing data volumes (e.g., 3 years, 5 years, and 10 years of satellite imagery). Apache Spark metrics will be used to measure system behavior under increasing workload.
+
+\begin{itemize}
+    \item Processing throughput (e.g., spatial tiles or GB processed per minute)
+    \item Total runtime as a function of data volume
+    \item Peak executor memory usage
+\end{itemize}
+
+Scalability is demonstrated if throughput remains stable and total runtime grows approximately linearly with increasing data size, without excessive memory pressure or disk spill.
+
+\subsection{Concurrency Evaluation (Parallel Processing Efficiency)}
+
+Concurrency is evaluated by examining stages with naturally parallel workloads, such as ingestion, preprocessing, and NDVI/NDMI feature computation across spatial tiles.
+
+Apache Spark metrics will be used to measure:
+
+\begin{itemize}
+    \item Number of active tasks per stage (parallel tile and time-series computations)
+    \item Executor CPU utilization during parallel stages
+\end{itemize}
+
+Efficient concurrency is demonstrated if multiple spatial tiles are processed simultaneously across executors and CPU utilization remains consistently high, indicating effective use of distributed computing resources.
+
+\subsection{Query Efficiency Evaluation}
+
+To assess data management efficiency, representative spatiotemporal queries (e.g., region-based queries over varying temporal ranges of satellite imagery) will be executed.
+
+Each query will be run both with spatial indexing enabled and without spatial indexing to compare performance.
+
+Apache Spark and Apache Sedona metrics will be used to measure:
+
+\begin{itemize}
+    \item Query execution time (latency)
+    \item Number of spatial tiles or records scanned per query
+    \item I/O cost during query execution
+\end{itemize}
+
+Query efficiency is demonstrated if indexed queries exhibit significantly lower latency and reduced data scans compared to non-indexed queries, and if query time increases gradually rather than sharply as the queried temporal range grows.
+
+\subsection{Statistical Model Evaluation (Anomaly Classification Performance)}
+
+To evaluate the effectiveness of the anomaly detection component, the problem is formulated as a binary classification task in which each pixel is labeled as either anomalous or normal based on the Z-score thresholding criterion.
+
+The predicted class labels are derived directly from the statistical test, where a pixel is classified as an anomaly if its computed Z-score falls below the predefined threshold. Model performance is assessed by comparing these predicted labels against reference anomaly annotations when available.
+
+The following standard classification metrics will be used:
+
+\begin{itemize}
+    \item Accuracy: Overall proportion of correctly classified pixels.
+    \item Precision: Proportion of predicted anomalies that are true anomalies.
+    \item Recall: Proportion of true anomalies that are successfully detected.
+\end{itemize}
+
+The statistical model is considered effective if it achieves high recall while maintaining reasonable precision, ensuring that vegetation stress events are detected reliably without excessive false alarms.

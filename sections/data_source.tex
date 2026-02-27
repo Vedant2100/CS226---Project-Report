@@ -1,0 +1,49 @@
+\section{Data Sources and Study Context}
+
+\subsection{Study Region and Timeline}
+
+This study focuses on Boulder County, Colorado, a region significantly impacted by the Mountain Pine Beetle (MPB) outbreak. The MPB infestation has caused widespread forest mortality across Colorado, making it an appropriate case study for analyzing vegetation stress preceding documented disease events.
+
+\begin{itemize}
+    \item \textbf{Region:} Boulder County, Colorado
+    \item \textbf{Disease Focus:} Mountain Pine Beetle (MPB)
+    \item \textbf{Temporal Scope:} 2015--2025 (10-year archive)
+\end{itemize}
+
+The selected timeline enables construction of seasonal vegetation baselines and retrospective analysis of anomalous behavior prior to documented outbreaks.
+
+\subsection{Satellite Imagery: Harmonized Landsat--Sentinel-2 (HLS)}
+
+The primary satellite dataset used is the Harmonized Landsat--Sentinel-2 (HLS) surface reflectance product, which integrates Landsat and Sentinel-2 imagery into a consistent multispectral dataset.
+
+\begin{itemize}
+    \item Provides standardized surface reflectance data
+    \item Includes visible, near-infrared, and shortwave infrared bands
+    \item Supports computation of NDVI and NDMI
+    \item High temporal frequency suitable for time-series analysis
+\end{itemize}
+
+These properties make HLS suitable for detecting subtle vegetation stress patterns over time.
+
+\subsection{Land Cover Data: ESA WorldCover 10 m}
+
+The ESA WorldCover 10 m global land cover dataset is used to isolate forested areas within the study region.
+
+\begin{itemize}
+    \item 10 m spatial resolution land cover classification
+    \item Used to apply a forest mask
+    \item Reduces noise from cropland, grassland, and urban surfaces
+\end{itemize}
+
+Restricting analysis to forest pixels improves ecological relevance and anomaly interpretation.
+
+\subsection{Data Access via Google Earth Engine}
+
+Satellite data retrieval and preliminary filtering are conducted using Google Earth Engine (GEE).
+
+\begin{itemize}
+    \item Cloud-based access to large satellite archives
+    \item Filtering by region (Boulder County)
+    \item Filtering by time range (2015--2025)
+    \item Quality filtering (e.g., cloud coverage)
+\end{itemize}

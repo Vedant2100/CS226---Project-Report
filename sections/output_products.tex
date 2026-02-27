@@ -1,19 +1,18 @@
 \section{Output Products and Visualization}
-
+\label{sec:output_products}
 % \subsection{Raster-Based Anomaly Maps}
 % The system produces spatially explicit anomaly maps that highlight regions exhibiting significant negative deviations from their historical baselines. These maps are stored as Cloud-Optimized GeoTIFFs (COGs), enabling efficient visualization and retrieval without loading entire rasters into memory. Each anomaly raster represents a specific month or year and encodes standardized Z-scores, allowing analysts to identify clusters of early stress. This output format is consistent with modern geospatial monitoring pipelines, such as those used in GLAD \cite{isprs-cube} and Digital Earth \cite{bark-beetle}, which rely on cloud-native rasters for large-scale forest disturbance assessment.
 
 % \subsection{Tabular and Spatiotemporal Event Records}
 % In addition to raster outputs, the system generates tabular anomaly event records stored in Parquet or GeoParquet format. Each record contains pixel identifiers, timestamps, anomaly magnitudes, and spatial coordinates. These structured outputs support downstream statistical analysis, temporal aggregation, and integration with external datasets such as USFS bark beetle outbreak maps. The use of columnar storage formats aligns with big-data principles and facilitates scalable querying across millions of observations.
 
-\subsection{Interactive Visualization and Forest Health Dashboard}
-To facilitate exploratory analysis and lead-lag verification, we developed a lightweight interactive dashboard using Python. This tool allows users to select specific forest regions and timeframes to query the anomaly detection model. The dashboard provides three primary visual outputs:
+\subsection{Forest Health Visualization}
+We will develop a simple web tool which allows users to select timeframes for the given region to run the anomaly detection pipeline on. The dashboard provides two primary visual outputs:
 \begin{enumerate}
-    \item \textbf{Anomaly Statistics}: Displays real-time Z-scores for the selected period, indicating the intensity of spectral deviations.
-    \item \textbf{Temporal Trend Analysis}: Plots the NDVI profile against historical baselines to contextualize current stress levels.
-    \item \textbf{Spectral Timelapse}: Renders an animated sequence of satellite imagery (RGB and NDVI) for the selected timeframe, enabling visual confirmation of canopy stress or disturbance events.
+    \item \textbf{Anomaly Information}: Displays real-time Z-scores and a Raster Anomaly Map for spatial visualization or a Tabular Event Dataset in Parquet format.
+    % \item \textbf{Temporal Trend Analysis}: Plots the NDVI's time profile against historical baselines to contextualize current stress levels.
+    \item \textbf{Spectral Timelapse}: Renders an animated sequence of satellite imagery (RGB) for the selected timeframe, enabling possible visual confirmation of canopy stress or disturbance events.
 \end{enumerate}
-By integrating these visual products into a single interface, the system supports a more intuitive interpretation of the statistical anomalies, bridging the gap between raw data processing and ecological decision-making.
 
-\subsection{Interpretability and Communication of Results}
-The final outputs are designed to support interpretability rather than automated decision-making. Anomaly maps and event tables provide evidence of unusual vegetation behavior, but their ecological meaning must be evaluated alongside environmental context, land-cover information, and outbreak records. This emphasis on interpretability reflects the caution expressed in both the literature survey and project proposal, which note that anomalies may arise from multiple factors and should be treated as exploratory signals rather than definitive diagnoses.
+% \subsection{Interpretability and Communication of Results}
+% The final outputs are designed to support interpretability rather than automated decision-making. Anomaly maps and event tables provide evidence of unusual vegetation behavior, but their ecological meaning must be evaluated alongside environmental context, land-cover information, and outbreak records. This emphasis on interpretability reflects the caution expressed in both the literature survey and project proposal, which note that anomalies may arise from multiple factors and should be treated as exploratory signals rather than definitive diagnoses.

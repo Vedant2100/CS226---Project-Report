@@ -2,7 +2,11 @@
 \label{sec:data_transformation}
 
 \subsection{Forest Mask Application and Quality Filtering}
-Following the spatiotemporal ingestion and indexing phase, the raw reflectance data is retrieved from the object storage using the database index. To ensure index values represent true forest dynamics, a sequence of spatial filtering and quality masking is applied dynamically for every query. This "late-binding" transformation approach avoids the high storage costs of maintaining pre-processed forest-masked datasets while ensuring that the latest land-cover masks and quality algorithms are always utilized during analysis.
+Following the spatiotemporal ingestion and indexing phase, the raw reflectance data is retrieved from the object storage using the database index. To ensure index values represent true forest dynamics, a sequence of spatial filtering and quality masking is applied dynamically for every query.
+
+
+% This "late-binding" transformation approach avoids the high storage costs of maintaining pre-processed forest-masked datasets while ensuring that the latest land-cover masks and quality algorithms are always utilized during analysis.
+
 \begin{itemize}
     \item \textbf{Data Source:} Uses ESA WorldCover 10m land cover map.
     \item \textbf{Method:} Apache Sedona spatial join between HLS pixel centroids and WorldCover polygons.
@@ -51,3 +55,23 @@ Establishes a historical baseline to identify deviations in vegetation behavior.
 % For each forest pixel, a multi-year baseline is computed by aggregating monthly NDVI and NDMI values across a fixed historical period (e.g., a 10-year period). The baseline includes the mean and standard deviation for each month, forming a climatological signature of normal vegetation behavior. 
 % % This structure mirrors the ``historical seasonal baseline'' approach used in near-real-time anomaly frameworks \cite{nrt-anomalies}, where deviations from expected monthly patterns are converted into standardized anomaly scores. The resulting baselines serve as the foundation for detecting statistically significant vegetation stress preceding disease outbreaks.
 
+\subsection{On demand anomaly detection}
+\label{sec:on_demand_detection}
+
+To ensure the system remains responsive and memory-efficient, the transformation and detection logic are not pre-calculated; instead, they are executed on-the-fly for the specific spatiotemporal window requested by the user.
+
+\subsection{Query-Triggered Anomaly detection}
+\label{subsec:on_demand_indices}
+\subsection{Standardized Z-Score Anomaly Logic}
+\label{subsec:z_score_logic}
+Immediately following index derivation, the anomaly detection logic is applied to the filtered dataset to identify significant vegetation stress.
+
+\begin{itemize}
+    \item \textbf{Statistical Normalization:} For every pixel in the user's query timeframe, the observed index value is compared against a pre-computed historical baseline (2015--2025). The Z-score is calculated as:
+    \begin{equation}
+        Z = \frac{\text{Observed Value} - \mu_{monthly}}{\sigma_{monthly}}
+    \end{equation}
+    where $\mu_{monthly}$ and $\sigma_{monthly}$ are the mean and standard deviation for that specific pixel and month.
+    \item \textbf{Anomaly Thresholding:} A pixel is flagged as an anomaly if $Z < -2.0$, signaling a statistically rare decline in vegetation health relative to historical seasonal patterns.
+    \item \textbf{Query Output:} The system returns the results as either a \textit{Raster Anomaly Map} for spatial visualization or a \textit{Tabular Event Dataset} in Parquet format, providing immediate feedback for the user's specific query.
+\end{itemize}
