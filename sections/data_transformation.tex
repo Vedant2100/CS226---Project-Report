@@ -25,3 +25,15 @@ Both formulas are guarded against division-by-zero by a Spark \texttt{WHEN} clau
 \subsection{Temporal Harmonization and Monthly Compositing}
 
 Irregular multi-sensor observations are standardized into monthly composites using a Spark \texttt{groupBy} aggregation on stable pixel IDs (\texttt{true\_pixel\_id}), year, and month. Mean NDVI (\texttt{ndvi\_mean}) and mean NDMI (\texttt{ndmi\_mean}) are computed per pixel-month. Pixel-months with all-NaN values are dropped. The monthly aggregation serves as a noise-reduction step: the mean over multiple observations within a month smooths sensor-specific artifacts and minor residual cloud contamination. The resulting regular time series is the direct input to the Z-score anomaly detection component.
+
+\subsection{Impact of Scene Fetching Modes on Data Transformation}
+
+The data transformation pipeline supports three distinct scene discovery and fetching strategies: \textbf{Serial}, \textbf{Concurrent}, and \textbf{Query} modes. Each mode determines how scenes are identified and loaded for downstream processing:
+
+\begin{itemize}
+	\item \textbf{Serial Mode:} Scenes are discovered and read sequentially from S3, ensuring guaranteed order and low memory pressure, but at the cost of slower throughput for large archives.
+	\item \textbf{Concurrent Mode:} Multiple scenes are read in parallel using a thread pool, significantly increasing data ingestion speed and saturating available S3 bandwidth. This mode does not guarantee order and increases memory usage.
+	\item \textbf{Query Mode:} A spatiotemporal database query (e.g., PostGIS) returns only relevant scene URLs, which are then read in parallel. This mode enables the fastest discovery and minimizes unnecessary data transfer when the query window is restricted, but requires a populated database and careful query design.
+\end{itemize}
+
+Regardless of the fetch mode, all scenes undergo identical transformation steps: band extraction, forest mask application, vegetation index computation, and temporal harmonization. The choice of fetch mode primarily affects the efficiency and scalability of the pipeline, not the analytical output, as confirmed by identical anomaly detection results across modes. For further details, see Section~\ref{sec:scene_fetch_comparison} and the pipeline\_run\_analysis.txt.
