@@ -1,63 +1,27 @@
-\section{Data Transformation}
-\label{sec:data_transformation}
-When a user submits a query for a specific time range, the system dynamically retrieves the relevant data by first identifying candidate scenes using the spatial indices. It then uses the metadata in PostgreSQL/PostGIS to perform partial reads of the Cloud Optimized GeoTIFFs (COGs) stored in S3, fetching only the required spectral bands (Red, NIR, and SWIR).
+\section{Data Transformation Pipeline}
 
+\subsection{Band Extraction from S3 COGs}
 
+When a query is issued for a specific spatiotemporal window, the system first executes the PostGIS spatiotemporal query to retrieve matching scene URLs. For each scene, the Red (Band 1), NIR (Band 2), and SWIR1 (Band 3) band arrays are read directly from S3 COGs using \texttt{rasterio} with an AWS Session, streaming only the required bands without downloading complete files. A configurable \texttt{pixel\_stride} parameter (default 10) enables subsampling for scalability evaluations at reduced resolution. The \texttt{rasterio} dataset mask is applied to set no-data pixels to NaN. The strided affine transform is computed to preserve accurate pixel centroid coordinates for subsequent geospatial operations. Scene date is parsed from the file path or \texttt{tile\_id} using regular expression matching across multiple HLS and custom filename patterns.
 
-\subsection{Forest Mask Application and Quality Filtering}
-% Following the spatiotemporal ingestion and indexing phase, the raw reflectance data is retrieved from the object storage using the database index. To ensure index values represent true forest dynamics, a sequence of spatial filtering and quality masking is applied dynamically for every query.
+\subsection{Forest Mask Application}
 
+Following band extraction, the ESA WorldCover forest mask is applied at the NumPy array level before PySpark ingestion. Using \texttt{rasterio}'s \texttt{reproject} function, the WorldCover GeoTIFF is reprojected onto the subsampled HLS pixel grid, and pixels with values not equal to class 10 (tree cover) are set to NaN. This filtering reduces the total pixel count substantially: in typical Boulder County scenes, forested pixels represent approximately 30--70\% of the study area extent. Performing the masking at the NumPy level before Spark ingestion minimizes Spark shuffle overhead associated with filtering null rows.
 
-% This "late-binding" transformation approach avoids the high storage costs of maintaining pre-processed forest-masked datasets while ensuring that the latest land-cover masks and quality algorithms are always utilized during analysis.
+\subsection{Vegetation Index Computation in PySpark}
 
-\begin{itemize}
-    \item \textbf{Data Source:} Uses ESA WorldCover 10m land cover map.
-    \item \textbf{Method:} Apache Sedona spatial join between HLS pixel centroids and WorldCover polygons.
-    \item \textbf{Filtering:} Removes non-forest pixels (cropland, grassland, water, built-up surfaces) to reduce computational load.
-\end{itemize}
-\subsection{Vegetation Index Derivation}
-\label{subsec:vi_derivation}
-Computes spectral indices from Harmonized Landsat--Sentinel-2 (HLS) data using PySpark.
-\begin{itemize}
-    \item \textbf{Indices:} NDVI (Normalized Difference Vegetation Index) and NDMI (Normalized Difference Moisture Index).
-    \begin{equation}
-        NDVI = \frac{NIR - Red}{NIR + Red}, \quad NDMI = \frac{NIR - SWIR1}{NIR + SWIR1}
-    \end{equation}
-    (Derived from Red, Near-Infrared (NIR), and Shortwave Infrared (SWIR) bands).
-\end{itemize}
+NDVI and NDMI are computed within PySpark using column expressions on the pixel-level DataFrame:
 
+\begin{equation}
+\text{NDVI} = \frac{\text{NIR} - \text{Red}}{\text{NIR} + \text{Red}}
+\end{equation}
 
+\begin{equation}
+\text{NDMI} = \frac{\text{NIR} - \text{SWIR1}}{\text{NIR} + \text{SWIR1}}
+\end{equation}
 
-\subsection{Temporal Harmonization and Gap Handling}
-Standardizes irregular satellite observations into a consistent, regular temporal sequence.
-\begin{itemize}
-    \item \textbf{Aggregation:} Monthly composites to smooth noise and ensure comparability.
-    \item \textbf{Gap Filling:} Short-gap interpolation for missing months.
-    % \item \textbf{Result:} Produces stable, evenly spaced time series for subsequent analysis.
-\end{itemize}
+Both formulas are guarded against division-by-zero by a Spark \texttt{WHEN} clause that returns \texttt{NULL} when the denominator equals zero. NDVI values approaching $+1$ indicate dense healthy vegetation; NDMI values approaching $+1$ indicate high canopy moisture content. These two complementary indices capture both photosynthetic activity and water status, providing richer characterization of vegetation stress than either alone, as motivated by the spectral analysis literature~\cite{carletti2025,konig2023}.
 
-% \subsection{Baseline Construction for Anomaly Detection}
-% Establishes a historical baseline to identify deviations in vegetation behavior for each pixel.
-% \begin{itemize}
-%     \item \textbf{Calculation:} Aggregates monthly NDVI/NDMI values over a fixed 10-year historical period.
-%     \item \textbf{Metrics:} Calculates the mean and standard deviation for each month.
-%     % \item \textbf{Output:} A climatological signature of normal vegetation behavior for each pixel.
-% \end{itemize}
-% \subsection{Forest Mask Application and Quality Filtering}
-% After acquiring multispectral surface reflectance imagery, to ensure that index values represent true forest dynamics, the ESA WorldCover 10\,m land cover map is applied as a forest mask. This is implemented via an Apache Sedona spatial join between the HLS pixel centroids and the WorldCover polygons. By dropping non-forest pixels (cropland, grassland, water, and built-up surfaces) early in the pipeline, the system significantly reduces the computational burden for subsequent time-series analysis. 
-% % The literature emphasizes the importance of such masking, noting that NDVI alone ``does not distinguish among vegetation types,'' and that restricting analysis to forest pixels improves interpretability and reduces contamination \cite{worldcover}. Additionally, cloud-affected observations are filtered using Spark DataFrame operations to evaluate scene metadata and quality flags, ensuring that only valid, atmospherically corrected reflectance values contribute to the time series.
+\subsection{Temporal Harmonization and Monthly Compositing}
 
-% \subsection{Vegetation Index Derivation}
-%  The system utilizes PySpark in conjunction with raster libraries (such as Rasterio) to compute Normalized Difference Vegetation Index (NDVI) and the Normalized Difference Moisture Index (NDMI), from the red, near-infrared, and shortwave infrared bands of the Harmonized Landsat--Sentinel-2 (HLS) dataset. 
-% % This approach aligns with prior studies showing that long-term vegetation and moisture-sensitive indices can reveal subtle stress signals before visible symptoms emerge (\cite{ndvi}).
-
-
-
-% \subsection{Temporal Harmonization and Gap Handling}
-% % Because Sentinel--2 and Landsat observations arrive at irregular intervals due to clouds, revisit cycles, and acquisition geometry, the preprocessing pipeline standardizes the data into a regular temporal sequence. The Harmonized Landsat--Sentinel-2 (HLS) product already resolves cross-sensor differences by aligning spectral bands, normalizing reflectance, and placing all imagery on a common grid, so no additional spectral harmonization is required. The pipeline instead aggregates all valid observations within each period---typically a month---into a single composite to smooth noise and ensure year-to-year comparability. When months lack cloud-free data, values are filled through short-gap interpolation or left missing when coverage is insufficient. Producing a stable, evenly spaced NDVI and NDMI time series is necessary for constructing historical baselines and supports statistical models such as BFAST \cite{bfast} and Adaptive EWMA \cite{forests-survey}, which require regular sampling to detect deviations from expected seasonal patterns.
-% Because Sentinel--2 and Landsat observations arrive at irregular intervals, the preprocessing pipeline standardizes the data into a regular temporal sequence. The pipeline aggregates valid observations within each period into a single composite to smooth noise and ensure comparability. When months lack cloud-free data, values are filled through short-gap interpolation or left missing when coverage is insufficient. This produces a stable, evenly spaced NDVI and NDMI time series for subsequent analysis.
-
-% \subsection{Baseline Construction for Anomaly Detection}
-% For each forest pixel, a multi-year baseline is computed by aggregating monthly NDVI and NDMI values across a fixed historical period (e.g., a 10-year period). The baseline includes the mean and standard deviation for each month, forming a climatological signature of normal vegetation behavior. 
-% % This structure mirrors the ``historical seasonal baseline'' approach used in near-real-time anomaly frameworks \cite{nrt-anomalies}, where deviations from expected monthly patterns are converted into standardized anomaly scores. The resulting baselines serve as the foundation for detecting statistically significant vegetation stress preceding disease outbreaks.
-
+Irregular multi-sensor observations are standardized into monthly composites using a Spark \texttt{groupBy} aggregation on stable pixel IDs (\texttt{true\_pixel\_id}), year, and month. Mean NDVI (\texttt{ndvi\_mean}) and mean NDMI (\texttt{ndmi\_mean}) are computed per pixel-month. Pixel-months with all-NaN values are dropped. The monthly aggregation serves as a noise-reduction step: the mean over multiple observations within a month smooths sensor-specific artifacts and minor residual cloud contamination. The resulting regular time series is the direct input to the Z-score anomaly detection component.

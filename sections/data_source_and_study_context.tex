@@ -1,0 +1,36 @@
+\section{Data Sources and Study Context}
+
+\subsection{Study Region}
+
+This study focuses on Boulder County, Colorado (approximately 4,900 km$^2$), a region significantly impacted by the Mountain Pine Beetle (MPB) outbreak. The geographic bounds of the study area are approximately West $-105.7^\circ$, South $39.9^\circ$, East $-105.0^\circ$, North $40.3^\circ$. MPB infestation has caused widespread forest mortality across Colorado, making it an appropriate case study for analyzing vegetation stress preceding documented disease events. In agricultural settings, farmers and local communities can often observe visible signs of disease and take corrective action; in forested and remote regions, however, such direct monitoring is limited or nonexistent, allowing diseases to spread undetected for extended periods~\cite{proposal}.
+
+\subsection{The Three Experimental Datasets}
+
+We analyze three distinct satellite datasets independently through the same pipeline. This multi-dataset design demonstrates architectural scalability across resolution, volume, and temporal scope, and reflects the practical reality that different monitoring scenarios demand different data products. Data access and preliminary quality filtering for all three datasets were conducted through Google Earth Engine (GEE). To keep file sizes manageable, only the required spectral bands (Red, NIR, SWIR1) were exported, and a cloud-cover cap was applied during GEE export. These choices mean that the raw data volumes are smaller than the theoretical petabyte-scale archives, but the pipeline architecture is identical regardless of input size.
+
+\begin{table}[H]
+\centering
+\begin{tabular}{|c|c|c|c|c|c|}
+\hline
+\textbf{Dataset} & \textbf{Temporal Range} & \textbf{Resolution} & \textbf{Raw Size} & \textbf{No. of Objects} & \textbf{Images/Month} \\
+\hline
+Dataset A & 2015--2026 & 50 m & 3.6 GB & 464 & $\sim$5/month \\
+\hline
+Dataset B & 2024--2026 & 30 m & 2.8 GB & 96 & Recent data \\
+\hline
+Dataset C & 2019--2026 & 20 m & 15 GB & 150 & High-detail \\
+\hline
+\end{tabular}
+\caption{The three satellite datasets used in this project.}
+\label{tab:datasets}
+\end{table}
+
+Dataset A provides the longest temporal baseline (11 years), making it the primary dataset for historical anomaly baseline construction. Dataset B covers the most recent period and offers 30 m spatial detail suitable for monitoring current outbreak dynamics. Dataset C offers the finest spatial resolution and a seven-year time range well-suited for detailed spatial stress mapping. All three datasets use atmospherically corrected surface reflectance products from Sentinel-2 Level-2A or Landsat Collection 2 Level-2, as identified in the project proposal.
+
+\subsection{Sentinel-2 and Landsat Surface Reflectance}
+
+The satellite imagery consists of Sentinel-2 Level-2A and Landsat Collection 2 Level-2 surface reflectance products. These datasets provide atmospherically corrected optical imagery with multispectral bands spanning the visible, near-infrared, red-edge, and shortwave infrared regions. Surface reflectance products allow the computation of vegetation indices such as NDVI, which quantify vegetation health and support the detection of temporal changes associated with stress or disease. Sentinel-2's frequent revisit rate and high spatial resolution (10 m for key bands) make it particularly suited to monitor forest dynamics and capture subtle variations in canopy condition. We export and process only the Red, NIR, and SWIR1 bands required for NDVI and NDMI computation, which substantially reduces per-scene file size relative to full-band exports.
+
+\subsection{ESA WorldCover Land Cover}
+
+The ESA WorldCover 10 m global land cover product provides a high-resolution classification used to identify and mask non-forest areas prior to vegetation index computation and time-series analysis. Because NDVI measures relative greenness but does not distinguish among vegetation types, isolating forested pixels is essential when evaluating forest health. Without land-cover context, signals from grasslands, croplands, water bodies, or built environments could be misinterpreted as forest dynamics, confounding anomaly detection. This practice of restricting analysis to true forest pixels is also employed by Ghilardi et al.~\cite{ghilardi2025} in their multi-decadal forest disturbance study, where forest masking improves the accuracy of canopy loss and recovery metrics derived from NDVI. By incorporating WorldCover early in the processing pipeline, we reduce contamination from non-forest surfaces, improve signal interpretability, and focus computational resources on pixels that are ecologically relevant to our disease anomaly analysis.

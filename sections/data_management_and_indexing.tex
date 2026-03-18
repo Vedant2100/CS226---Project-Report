@@ -1,0 +1,27 @@
+\section{Data Management and Indexing}
+
+\subsection{Raw Data Storage: Cloud Optimized GeoTIFF on AWS S3}
+
+All satellite imagery is stored as Cloud Optimized GeoTIFFs (COGs) in an Amazon S3 bucket. COGs are internally tiled at $512 \times 512$ pixels and compressed using LZW, with automatically generated multi-resolution overview levels ([2, 4, 8, 16]). This format enables byte-range HTTP requests so that only the specific tile windows required for a given spatiotemporal query need to be transferred from S3, without downloading entire scenes. File URLs follow the pattern \texttt{s3://vegetation-anomaly-cogs/cog/\{year\}/\{tile\_id\}.cog.tif}. A separate PostgreSQL/PostGIS database serves as the metadata index. Each indexed scene has an entry recording: \texttt{tile\_id}, \texttt{acquisition\_date}, \texttt{cloud\_cover}, \texttt{ndvi\_mean}, \texttt{ndvi\_std}, \texttt{ndmi\_mean}, raster CRS, pixel dimensions, \texttt{resolution\_m}, \texttt{band\_count}, compression, \texttt{has\_overviews}, source product, S3 \texttt{file\_url}, and a WGS84 bounding box geometry (\texttt{GEOMETRY(Polygon, 4326)}).
+
+\subsection{Batch ETL Pipeline}
+
+A two-phase ETL pipeline processes raw imagery. Phase 1 sources GeoTIFF files from Google Drive (the initial export destination from GEE). Phase 2 processes raw TIFs already uploaded to the \texttt{S3 raw/} prefix. For each file, the pipeline:
+\begin{enumerate}
+    \item parses the HLS filename via regex to extract product type (S30/L30), tile ID, year, and day-of-year;
+    \item validates COG compliance using \texttt{rasterio}, checking for internal tiling, overviews, and compression;
+    \item converts non-conforming files to COG format using GDAL's \texttt{gdal\_translate} with COG creation options;
+    \item extracts raster metadata including WGS84 bounding box via \texttt{pyproj} CRS reprojection;
+    \item uploads the COG to S3 using \texttt{boto3} with automatic multipart upload for large files; and
+    \item inserts metadata into PostGIS using \texttt{ST\_MakeEnvelope} to create the bounding box geometry.
+\end{enumerate}
+
+Benchmark tests during ingestion show a $1.5$--$3.0\times$ read speedup when querying COG tiles over original non-optimized GeoTIFFs, consistent with the expected advantage of COG partial reads.
+
+\subsection{Spatial and Temporal Indexing}
+
+Three indexes are created on the \texttt{vegetation\_metadata} table. First, a GIST spatial index on the \texttt{geom} column (\texttt{idx\_vegetation\_geom}) enables fast \texttt{ST\_Intersects} bounding box filtering. Second, a B-tree temporal index on \texttt{acquisition\_date} (\texttt{idx\_vegetation\_date}) supports efficient date-range queries. Third, a composite index on (\texttt{tile\_id}, \texttt{acquisition\_date}) accelerates tile-specific lookups. The GIST index is the critical performance enabler for the spatiotemporal query that identifies candidate COG scenes for a user-specified region and time window, as demonstrated quantitatively. 
+
+\subsection{Spatiotemporal Data Cube Index}
+
+The final output of the ingestion phase is a centralized metadata table linking space (WGS84 bounding box geometry), time (acquisition date), and data location (S3 URL). A spatiotemporal query—implemented using \texttt{ST\_Intersects} and \texttt{acquisition\_date BETWEEN} clauses—returns the set of scene S3 URLs that overlap the query region and fall within the requested time range. This design separates heavyweight raster storage from lightweight metadata, allowing fast spatiotemporal filtering without loading any actual imagery. The returned S3 URLs serve as direct input to the distributed PySpark transformation stage, and the centralized index serves as the entry point for the downstream data transformation pipeline, enabling the efficient retrieval of filtered pixel-level reflectance data.

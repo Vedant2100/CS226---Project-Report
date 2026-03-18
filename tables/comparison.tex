@@ -1,0 +1,37 @@
+\begin{table}[H]
+\centering
+\begin{tabular}{|p{3.2cm}|p{3.5cm}|p{3.2cm}|p{4cm}|}
+\hline
+\textbf{Category} & \textbf{Main Idea} & \textbf{Unit of Analysis} & \textbf{Limitations} \\
+\hline
+
+Statistical Time-Series Modeling~\cite{kennedy2010,xie2025} 
+& Work around seasonal pattern 
+& Per-pixel of image 
+& Require large historical baseline \\
+\hline
+
+Spectral \& Species-Specific~\cite{carletti2025,jamali2024,konig2023} 
+& Tailored method based on forest type or tree species 
+& Multi-index, Sentinel-2 
+& Can lead to overfitting in a specific region; unable to give a general model \\
+\hline
+
+Unsupervised Learning~\cite{jakubik2023,kirsch2025,gorelick2017,zhang_ssl2025} 
+& Pre-training on massive unlabeled data to understand normal behavior before fine-tuning 
+& Band sequences; NDVI index trends 
+& Requires repeated access to large datasets \\
+\hline
+
+Geospatial Big-Data Systems~\cite{rdpro2024,yu2019} 
+& Distributed storage, indexing, and raster processing 
+& Full space $\times$ time archives 
+& Strong scalability and I/O guarantees \\
+\hline
+
+\end{tabular}
+
+\vspace{4pt}
+\caption{Comparison of Change Detection and Distributed Framework Methods.}
+\label{tab:comparison}
+\end{table}

@@ -1,0 +1,9 @@
+\section*{Abstract}
+
+Early detection of plant diseases is an important challenge in both agricultural and forested ecosystems, where delayed identification can cause significant ecological and economic damage. This project investigates whether large-scale vegetation anomalies observable in historical remote sensing data precede documented plant disease outbreaks, focusing on the Mountain Pine Beetle (MPB) infestation in Boulder County, Colorado.
+
+We construct a scalable, cloud-native Big Data pipeline that ingests satellite imagery as Cloud Optimized GeoTIFFs (COGs) on Amazon S3, indexes spatiotemporal metadata in a PostGIS database with GIST spatial indexing, and processes pixel-level spectral data using Apache PySpark. Three distinct real-world datasets are analyzed independently through the same pipeline: a 2015--2026 archive at 50\,m resolution (3.6\,GB, 464 objects), a 2024--2026 archive at 30\,m resolution (2.8\,GB, 96 objects), and a 2019--2026 archive at 20\,m resolution (15\,GB, 150 images).
+
+For each dataset, ESA WorldCover land cover data isolates forested pixels, NDVI and NDMI vegetation indices are computed in PySpark, and anomalies are flagged via Z-score comparison against a per-pixel historical baseline. Evaluation demonstrates that GIST-indexed queries reduce latency by 15--25$\times$ over sequential scans, that PySpark throughput scales approximately linearly with data volume, and that the Z-score detector achieves approximately 71\% recall in identifying vegetation stress events corresponding to periods of documented MPB activity.
+
+The identical pipeline processing all three datasets validates the system's architectural scalability across resolution, volume, and temporal range.

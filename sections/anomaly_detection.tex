@@ -1,16 +1,25 @@
-\section{Query-Triggered Anomaly detection}
-\label{subsec:on_demand_indices}
-To ensure the system remains responsive and memory efficient, the transformation and detection logic are not pre calculated and are instead executed on the fly for the specific spatiotemporal window requested by the user.
-\subsection{Standardized Z-Score Anomaly Logic}
-\label{subsec:z_score_logic}
-Immediately following index derivation, the anomaly detection logic is applied to the filtered dataset to identify significant vegetation stress.
+\section{Query-Triggered Anomaly Detection}
 
-\begin{itemize}
-    \item \textbf{Statistical Normalization:} For every pixel in the user's query timeframe, the observed index value is compared against a pre-computed historical baseline (2015--2025). The Z-score is calculated as:
-    \begin{equation}
-        Z = \frac{\text{Observed Value} - \mu_{monthly}}{\sigma_{monthly}}
-    \end{equation}
-    where $\mu_{monthly}$ and $\sigma_{monthly}$ are the historical mean and standard deviation of the selected vegetation index value (such as NDVI or NDMI) for that specific pixel and month.
-    \item \textbf{Anomaly Thresholding:} A pixel is flagged as an anomaly if $Z < -2.0$, representing observations in the lower tail of the distribution more than two standard deviations below the historical mean, and thus indicating unusually low vegetation index values for that season.
-    \item \textbf{Query Output:} The system returns the results as either a \textit{Raster Anomaly Map} for spatial visualization or a \textit{Tabular Event Dataset} in Parquet format, providing immediate feedback for the user's specific query.
-\end{itemize}
+
+To ensure the system remains responsive and memory-efficient, the transformation and detection logic are not pre-calculated. Instead, they are executed on-the-fly for the specific spatiotemporal window requested by the user. This on-demand design reflects the project's relevance to Big Data: the full archive is indexed and queryable at any time, but only the data relevant to a given query window is loaded and processed, keeping memory pressure bounded.
+
+\subsection{Historical Baseline Construction}
+
+All data with acquisition dates strictly before the user-configured evaluation start date is designated as the baseline. For each unique stable pixel ID and calendar month, the pipeline computes the baseline mean (\texttt{ndvi\_mu}, \texttt{ndmi\_mu}) and standard deviation (\texttt{ndvi\_sigma}, \texttt{ndmi\_sigma}) using Spark population standard deviation. A minimum baseline requirement of 12 months is enforced programmatically: if insufficient history precedes the evaluation window, the pipeline raises an informative error. This minimum ensures that baseline statistics represent the pixel's typical seasonal behavior rather than being dominated by a single anomalous year.
+
+\subsection{Z-Score Computation and Anomaly Flagging}
+\label{subsec:zscore}
+
+For each pixel-month in the evaluation window, the observed NDVI (and NDMI) is compared to its historical monthly baseline using a standardized Z-score:
+
+\begin{equation}
+Z = \frac{\text{Observed Value} - \mu_{\text{monthly}}}{\sigma_{\text{monthly}}}
+\end{equation}
+
+where $\mu_{\text{monthly}}$ and $\sigma_{\text{monthly}}$ are the historical mean and standard deviation for that pixel and calendar month, as computed in the baseline phase. The anomaly threshold is configurable; in our implementation it is set to $-1.5$ rather than the more conservative $-2.0$ threshold, prioritizing recall (sensitivity to true stress events) over precision. A pixel-month with $Z < -1.5$ is flagged with \texttt{is\_ndvi\_anomaly = True} or \texttt{is\_ndmi\_anomaly = True}, respectively. Pixels with insufficient baseline standard deviation ($\sigma = 0$) receive a Z-score of $0.0$ and are not flagged. 
+
+The choice of Z-score threshold represents a key trade-off: a less conservative threshold detects earlier, subtler stress at the cost of more false positives, while a more conservative threshold reduces false alarms but may miss the green-attack phase that precedes visible symptoms.
+
+\subsection{Output Products}
+
+Detected anomalies are exported to S3 in Apache Parquet format under a \texttt{run\_id} timestamp prefix (formatted as \texttt{YYYYMMDD\_HHMMSS}) for versioning and reproducibility. Two primary output datasets are produced per pipeline run: (1) an \texttt{anomaly\_events} Parquet file containing all flagged pixel-months with their Z-scores, vegetation index values, and baseline statistics; and (2) a \texttt{time\_series\_stats} Parquet file containing the complete pixel-month time series for post-hoc analysis and visualization. These Parquet files serve as the analytical foundation for the raster anomaly maps and timelapse visualizations.
