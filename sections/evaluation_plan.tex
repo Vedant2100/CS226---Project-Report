@@ -15,23 +15,23 @@ This section presents a comparative evaluation of the pipeline's performance and
 \hline
 \textbf{Metric} & \textbf{20m Resolution} & \textbf{30m Resolution} & \textbf{50m Resolution} \\
 \hline
-Scenes Fetched & 109 & 98 & \cellcolor{green!10}584 $\checkmark$ \\
-Scene Fetch Time (s) & 0.75 & \cellcolor{green!10}0.16 $\checkmark$ & 0.32 \\
-Scenes per Second & 144.96 & 597.91 & \cellcolor{green!10}1846.72 $\checkmark$ \\
-Records Processed & \cellcolor{green!10}2,836,403 $\checkmark$ & 565,975 & 831,270 \\
-Transformation Time (s) & 8.00 & 4.26 & \cellcolor{green!10}2.83 $\checkmark$ \\
-Anomaly Events Detected & \cellcolor{green!10}139,644 $\checkmark$ & 11,710 & 2,739 \\
+Scenes Fetched & 109 & 98 & \textbf{584} \\
+Scene Fetch Time (s) & 0.75 & \textbf{0.16} & 0.32 \\
+Scenes per Second & 144.96 & 597.91 & \textbf{1846.72} \\
+Records Processed & \textbf{2,836,403} & 565,975 & 831,270 \\
+Transformation Time (s) & 8.00 & 4.26 & \textbf{2.83} \\
+Anomaly Events Detected & \textbf{139,644} & 11,710 & 2,739 \\
 Anomaly Detection Time (s) & 1.00 & 1.00 & 1.00 \\
-Total Pipeline Time (s) & 9.75 & 5.42 & \cellcolor{green!10}4.15 $\checkmark$ \\
-Query Latency (s) & 0.75 & \cellcolor{green!10}0.16 $\checkmark$ & 0.32 \\
-Pixels Monitored & \cellcolor{green!10}52,349 $\checkmark$ & 22,639 & 7,534 \\
+Total Pipeline Time (s) & 9.75 & 5.42 & \textbf{4.15} \\
+Query Latency (s) & 0.75 & \textbf{0.16} & 0.32 \\
+Pixels Monitored & \textbf{52,349} & 22,639 & 7,534 \\
 \hline
 \end{tabular}
 \caption{Comparison of pipeline metrics and anomaly detection results across three spatial resolutions. Green highlights indicate the best value for each metric.}
 \label{tab:three_dataset_comparison}
 \end{table}
 
-\textit{Note:} The best value for each metric is highlighted. Higher resolution (20m) enables monitoring more pixels and detecting more anomaly events, while lower resolutions (30m, 50m) offer faster fetch and transformation times. The choice of resolution should balance analytical needs and computational efficiency.
+\textit{Note:} The best value for each metric is shown in bold. Higher resolution (20m) enables monitoring more pixels and detecting more anomaly events, while lower resolutions (30m, 50m) offer faster fetch and transformation times. The choice of resolution should balance analytical needs and computational efficiency.
 
 
 \subsection{Experimental Setup}
