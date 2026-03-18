@@ -113,35 +113,3 @@ During NDVI/NDMI computation, PySpark partitions the pixel DataFrame across avai
 \subsection{Query Efficiency}
 
 Spatiotemporal queries are executed both with and without the GIST spatial index. With the GIST index enabled, query execution time for the full Boulder County study area over a decade-scale archive is measured at approximately 12--18\,ms. Without the GIST index (after dropping \texttt{idx\_vegetation\_geom}), the same query requires a full sequential scan taking 280--450\,ms—a 15--25$\times$ speedup directly attributable to GIST indexing. The \texttt{EXPLAIN ANALYZE} query plan confirms use of an Index Scan on \texttt{idx\_vegetation\_geom} rather than a Sequential Scan when the index is active. For narrower temporal ranges (single year versus full archive), query times increase gradually rather than sharply, consistent with $O(\log N)$ index lookup behavior.
-
-\subsection{Anomaly Classification Performance}
-
-The anomaly detection component flags each pixel as anomalous or normal based on whether its Z-score falls below the $-1.5$ threshold. The choice of this threshold reflects a deliberate emphasis on sensitivity, aiming to capture early and subtle vegetation stress rather than limiting detection to only the most severe deviations. Detected anomaly clusters are examined for spatial alignment with known MPB-susceptible forest zones and temporal correspondence with documented outbreak periods in Boulder County. The system produces spatially and temporally coherent anomaly patterns consistent with expected MPB impact behavior, supporting the analytical value of the proposed architecture.
-
-\begin{table}[H]
-\centering
-\small
-\begin{tabular}{|p{3.5cm}|p{4cm}|p{6cm}|}
-\hline
-\textbf{Evaluation Dimension} & \textbf{Key Metric} & \textbf{Result} \\
-\hline
-
-Scalability 
-& Runtime vs.\ data volume 
-& $\sim$ Linear scaling confirmed across 3-, 5-, and 11-year subsets of Dataset A; same pipeline applied to all three datasets \\
-\hline
-
-Concurrency 
-& Spark executor utilization 
-& CPU utilization $> 70\%$ during parallel tile processing; multiple tasks active simultaneously in Spark UI \\
-\hline
-
-Query Efficiency 
-& Indexed vs.\ non-indexed latency 
-& GIST index: 12--18\,ms; no index: 280--450\,ms $\rightarrow$ 15--25$\times$ speedup \\
-\hline
-
-\end{tabular}
-\caption{Summary of evaluation results across all three dimensions.}
-\label{tab:evaluation}
-\end{table}
