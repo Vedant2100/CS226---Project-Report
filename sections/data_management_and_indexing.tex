@@ -2,11 +2,18 @@
 
 \subsection{Raw Data Storage: Cloud Optimized GeoTIFF on AWS S3}
 
-All satellite imagery is stored as Cloud Optimized GeoTIFFs (COGs) in an Amazon S3 bucket. COGs are internally tiled at $512 \times 512$ pixels and compressed using LZW, with automatically generated multi-resolution overview levels ([2, 4, 8, 16]). This format enables byte-range HTTP requests so that only the specific tile windows required for a given spatiotemporal query need to be transferred from S3, without downloading entire scenes. File URLs follow the pattern \texttt{s3://vegetation-anomaly-cogs/cog/\{year\}/\{tile\_id\}.cog.tif}. A separate PostgreSQL/PostGIS database serves as the metadata index. Each indexed scene has an entry recording: \texttt{tile\_id}, \texttt{acquisition\_date}, \texttt{cloud\_cover}, \texttt{ndvi\_mean}, \texttt{ndvi\_std}, \texttt{ndmi\_mean}, raster CRS, pixel dimensions, \texttt{resolution\_m}, \texttt{band\_count}, compression, \texttt{has\_overviews}, source product, S3 \texttt{file\_url}, and a WGS84 bounding box geometry (\texttt{GEOMETRY(Polygon, 4326)}).
+All satellite imagery is stored as Cloud Optimized GeoTIFFs (COGs) in an Amazon S3 bucket. COGs are internally tiled at $512 \times 512$ pixels and compressed using LZW, with automatically generated multi-resolution overview levels ([2, 4, 8, 16]). This format enables byte-range HTTP requests so that only the specific tile windows required for a given spatiotemporal query need to be transferred from S3, without downloading entire scenes. File URLs follow the pattern \texttt{s3://vegetation-anomaly-cogs/datasetType/cog/\{year\}/\{tile\_id\}.cog.tif}. A separate PostgreSQL/PostGIS database serves as the metadata index. Each indexed scene has an entry recording:
+\begin{itemize}
+    \item \texttt{tile\_id}, \texttt{acquisition\_date}, \texttt{cloud\_cover}
+    \item \texttt{pixel\_dimensions}, \texttt{resolution\_m}
+    \item \texttt{band\_count}, \texttt{compression}, \texttt{has\_overviews}
+    \item \texttt{source\_product}, \texttt{s3\_file\_url}
+    \item \texttt{GEOMETRY(Polygon, 4326)} (WGS84 bounding box)
+\end{itemize}
 
 \subsection{Batch ETL Pipeline}
 
-A two-phase ETL pipeline processes raw imagery. Phase 1 sources GeoTIFF files from Google Drive (the initial export destination from GEE). Phase 2 processes raw TIFs already uploaded to the \texttt{S3 raw/} prefix. For each file, the pipeline:
+A two-phase ETL pipeline processes raw imagery. Phase 1 sources GeoTIFF files from Google Drive (the initial export destination from GEE). Phase 2 processes raw TIFs already uploaded to the \texttt{S3 raw/} prefix.Two phases used to first test using a local drive and than setup the could environment for scaling up. For each file, the pipeline:
 \begin{enumerate}
     \item parses the HLS filename via regex to extract product type (S30/L30), tile ID, year, and day-of-year;
     \item validates COG compliance using \texttt{rasterio}, checking for internal tiling, overviews, and compression;
@@ -16,7 +23,7 @@ A two-phase ETL pipeline processes raw imagery. Phase 1 sources GeoTIFF files fr
     \item inserts metadata into PostGIS using \texttt{ST\_MakeEnvelope} to create the bounding box geometry.
 \end{enumerate}
 
-Benchmark tests during ingestion show a $1.5$--$3.0\times$ read speedup when querying COG tiles over original non-optimized GeoTIFFs, consistent with the expected advantage of COG partial reads.
+Benchmark tests during ingestion show a $1.5$--$2.0\times$ read speedup when querying COG tiles over original non-optimized GeoTIFFs, consistent with the expected advantage of COG partial reads.
 
 \subsection{Spatial and Temporal Indexing}
 
