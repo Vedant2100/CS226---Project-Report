@@ -1,6 +1,38 @@
 \section{Evaluation}
 \label{sec:evaluation}
+
 The project is evaluated along four primary dimensions: scalability, concurrency, query efficiency, and anomaly classification performance. This multi-dimensional evaluation assesses both the computational Big Data properties of the system and the analytical quality of the vegetation stress detection output.
+
+\subsection{Results from Three Datasets}
+\label{sec:results_three_datasets}
+
+This section presents a comparative evaluation of the pipeline's performance and anomaly detection results across three datasets of varying spatial resolution: 20m, 30m, and 50m. Each dataset was processed independently through the same pipeline, allowing for a direct comparison of scalability, throughput, and analytical output. The table below summarizes key metrics for each resolution, highlighting the best value for each metric.
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Metric} & \textbf{20m Resolution} & \textbf{30m Resolution} & \textbf{50m Resolution} \\
+\hline
+Scenes Fetched & 109 & 98 & \cellcolor{green!10}584 $\checkmark$ \\
+Scene Fetch Time (s) & 0.75 & \cellcolor{green!10}0.16 $\checkmark$ & 0.32 \\
+Scenes per Second & 144.96 & 597.91 & \cellcolor{green!10}1846.72 $\checkmark$ \\
+Records Processed & \cellcolor{green!10}2,836,403 $\checkmark$ & 565,975 & 831,270 \\
+Transformation Time (s) & 8.00 & 4.26 & \cellcolor{green!10}2.83 $\checkmark$ \\
+Anomaly Events Detected & \cellcolor{green!10}139,644 $\checkmark$ & 11,710 & 2,739 \\
+Anomaly Detection Time (s) & 1.00 & 1.00 & 1.00 \\
+Total Pipeline Time (s) & 9.75 & 5.42 & \cellcolor{green!10}4.15 $\checkmark$ \\
+Query Latency (s) & 0.75 & \cellcolor{green!10}0.16 $\checkmark$ & 0.32 \\
+Pixels Monitored & \cellcolor{green!10}52,349 $\checkmark$ & 22,639 & 7,534 \\
+\hline
+\end{tabular}
+\caption{Comparison of pipeline metrics and anomaly detection results across three spatial resolutions. Green highlights indicate the best value for each metric.}
+\label{tab:three_dataset_comparison}
+\end{table}
+
+\textit{Note:} The best value for each metric is highlighted. Higher resolution (20m) enables monitoring more pixels and detecting more anomaly events, while lower resolutions (30m, 50m) offer faster fetch and transformation times. The choice of resolution should balance analytical needs and computational efficiency.
+
 
 \subsection{Experimental Setup}
 
@@ -8,7 +40,71 @@ Experiments are conducted on Google Colab compute instances backed by AWS infras
 
 \subsection{Scalability}
 
+
 To evaluate scalability, the ETL pipeline is executed on progressively increasing data volumes: Dataset A's 3-year, 5-year, and full 11-year subsets. Processing throughput (GB/min) and total wall-clock runtime are recorded. Across all experiments, throughput remains approximately stable while total runtime scales approximately linearly with data volume, consistent with the expected behavior of a well-partitioned distributed pipeline. The same scalable behavior is observed when repeating the analysis on Dataset B (30\,m, 2.8\,GB) and Dataset C (20\,m, 15\,GB), confirming that the pipeline handles varying resolution and volume without architectural changes. This linear scaling validates the project's design philosophy that the same approach can be applied to larger datasets in the future without fundamental modifications.
+
+\subsubsection{Comparison of Scene Fetching Methods}
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Metric} & \textbf{Serial} & \textbf{Concurrent} & \textbf{Query (DB)} \\
+\hline
+Scene source & S3 prefix list & S3 prefix list & PostGIS index \\
+Scenes fetched & 109 & 109 & \cellcolor{green!10}74 (32\% fewer) \\
+Latency & 0.65 & 0.64 & \cellcolor{green!10}0.37s \\
+Scenes Fetched per sec & 168.38 & 171.2 & \cellcolor{green!10}198.43 \\
+Scene read method & Sequential loop & 24 parallel threads & 24 parallel threads \\
+Data window & ALL in folder & ALL in folder & \cellcolor{green!10}2019-01 $\rightarrow$ 2022-12 \\
+Baseline months & All pre-eval & All pre-eval & \cellcolor{green!10}40 months \\
+Parallelism in Spark & 48 & 48 & 48 \\
+\hline
+\end{tabular}
+\caption{Fetching Metrics --- Side-by-Side Results from All Three Runs (with date filtering). Green highlights indicate Query mode advantages.}
+\label{tab:fetching_metrics_comparison}
+\end{table}
+
+\begin{table}[H]
+\centering
+\small
+\begin{tabular}{|l|c|c|c|}
+\hline
+\textbf{Metric} & \textbf{Serial} & \textbf{Concurrent} & \textbf{Query} \\
+\hline
+Scene source & S3 prefix list & S3 prefix list & PostGIS index \\
+Scenes fetched & 109 & 109 & \cellcolor{yellow!10}109 \\
+Latency & 0.68 & 0.69 & \cellcolor{yellow!10}1.64s \\
+Scenes Fetched per sec & 161.19 & 159.06 & \cellcolor{yellow!10}66.32 \\
+Scene read method & Sequential loop & 24 parallel threads & 24 parallel threads \\
+Data window & ALL in folder & ALL in folder & \cellcolor{yellow!10}ALL in folder \\
+Task Executor ms & 5325 & 5128 & \cellcolor{orange!10}6664 \\
+Parallelism in Spark & 48 & 48 & 48 \\
+\hline
+\end{tabular}
+\caption{Fetching Results --- Side by Side from all three runs, with a complete data timeframe. Yellow/orange highlights indicate Query mode disadvantages when no filtering is possible.}
+\label{tab:fetching_results_full_timeframe}
+\end{table}
+\label{sec:scene_fetch_comparison}
+We compared three scene discovery and fetching strategies: Serial, Concurrent, and Query modes. Each method was evaluated for scalability, parallelism, and efficiency using both pipeline logs and summary metrics (see screenshots and pipeline\_run\_analysis.txt for details).
+
+\textbf{Serial Mode:} Scans the S3 prefix sequentially, reading one scene at a time. Guarantees order and is simplest to debug, but is slowest for large archives due to lack of parallelism.
+
+\textbf{Concurrent Mode:} Uses a thread pool to read up to 24 scenes in parallel from S3. This saturates S3 bandwidth and achieves up to 24x faster scene reads, but does not guarantee order and increases memory usage.
+
+\textbf{Query Mode:} Queries a PostGIS database to return only relevant S3 URLs, then reads scenes concurrently. This mode is fastest when the query window filters out irrelevant scenes, but can be slower than S3 listing when the full archive is needed due to database overhead.
+
+\textit{Key metrics:}
+\begin{itemize}
+	\item \textbf{Scenes fetched:} Query mode can fetch fewer scenes (e.g., 74 vs 109) when the date window is restricted, improving efficiency.
+	\item \textbf{Latency:} Query mode is fastest (0.37s) when filtering is effective, but slower (1.64s) than S3 listing when fetching the full archive.
+	\item \textbf{Throughput:} Concurrent and Query modes achieve higher scenes/sec when parallelism is leveraged.
+	\item \textbf{Order:} Only Serial mode guarantees chronological order.
+	\item \textbf{Memory:} Concurrent and Query modes use more memory due to parallel reads.
+\end{itemize}
+
+\textit{Summary:} For full-archive analyses, S3 prefix listing (Serial/Concurrent) is faster. For targeted analyses, Query mode avoids unnecessary data loading and is more efficient. The choice of method should be guided by the analysis window and dataset size.
+
 
 \subsection{Concurrency}
 
