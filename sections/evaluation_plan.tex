@@ -1,11 +1,5 @@
 \section{Evaluation}
 \label{sec:evaluation}
-
-\subsection{Comparative Results Across Datasets of different resolutions and timeframes}
-This section presents a focused evaluation of the pipeline, organized as follows: (1) a comparative analysis across datasets of different spatial resolutions, (2) a detailed comparison of scene fetching methods, and (3) targeted discussion of scalability, concurrency, and query efficiency as their own subsections. All discussion references the tables below and the pipeline_run_analysis.txt for deeper context.
-
-\subsection{Results from Three Datasets}
-
 \subsection{Comparative Results Across Datasets}
 \label{sec:comparative_results_datasets}
 
@@ -26,7 +20,7 @@ Scenes per Second & 144.96 & 597.91 & \textbf{1846.72} \\
 Records Processed & \textbf{2,836,403} & 565,975 & 831,270 \\
 Transformation Time (s) & 8.00 & 4.26 & \textbf{2.83} \\
 Anomaly Events Detected & \textbf{139,644} & 11,710 & 2,739 \\
-Anomaly Detection Time (s) & 1.00 & 1.00 & 1.00 \\
+% Anomaly Detection Time (s) & 1.00 & 1.00 & 1.00 \\
 Total Pipeline Time (s) & 9.75 & 5.42 & \textbf{4.15} \\
 Query Latency (s) & 0.75 & \textbf{0.16} & 0.32 \\
 Pixels Monitored & \textbf{52,349} & 22,639 & 7,534 \\
@@ -40,31 +34,10 @@ Pixels Monitored & \textbf{52,349} & 22,639 & 7,534 \\
 \textit{Note:} The best value for each metric is shown in bold. Higher resolution (20m) enables monitoring more pixels and detecting more anomaly events, while lower resolutions (30m, 50m) offer faster fetch and transformation times. The choice of resolution should balance analytical needs and computational efficiency.
 
 \subsection{Experimental Setup}
-% Experimental setup: All experiments were conducted on Google Colab compute instances with AWS and PostGIS, as described in the main text. All datasets were processed through the same pipeline for a fair comparison.
-
-\subsection{Scalability}
+Experimental setup: All experiments were conducted on Google Colab compute instances with AWS and PostGIS, as described in the main text. All datasets were processed through the same pipeline for a fair comparison.
 
 \subsection{Scene Fetching Methods Comparison}
-\label{sec:scene_fetch_comparison}
 
-Table~\ref{tab:fetching_metrics_comparison} and Table~\ref{tab:fetching_results_full_timeframe} compare the three scene discovery and fetching strategies: Serial, Concurrent, and Query modes. These tables present key metrics for both a filtered (date-restricted) and full-archive scenario, as described in pipeline_run_analysis.txt.
-
-\textbf{Discussion:} The Serial mode is the simplest and guarantees scene order, but is slowest for large archives due to lack of parallelism. Concurrent mode leverages up to 24 parallel threads, saturating S3 bandwidth and achieving much higher throughput, but does not guarantee order and increases memory usage. Query mode, when the query window is restricted, can fetch significantly fewer scenes and achieve the fastest discovery (see Table~\ref{tab:fetching_metrics_comparison}). However, when the query window covers the full archive, Query mode is actually slower than S3 listing due to database overhead (see Table~\ref{tab:fetching_results_full_timeframe} and pipeline_run_analysis.txt Section 4.3). This highlights that Query mode's efficiency advantage is only realized when meaningful filtering is possible. All three methods achieve identical analytical results (see pipeline_run_analysis.txt Section 6.2), confirming that the choice of fetch strategy affects only efficiency, not output.
-
-
-\subsection{Scalability}
-\label{sec:scalability}
-The pipeline demonstrates strong scalability across both dataset size and scene fetching method. As shown in Table~\ref{tab:three_dataset_comparison}, throughput (scenes/sec) and total pipeline time scale as expected with the number of scenes and the method used. The pipeline maintains stable throughput across increasing data volumes, and the choice of scene fetching method (Table~\ref{tab:fetching_metrics_comparison}, Table~\ref{tab:fetching_results_full_timeframe}) can further optimize performance for specific scenarios. As discussed in pipeline_run_analysis.txt Section 4.3, Query mode's scalability advantage is most pronounced when the query window is restricted, reducing the number of scenes fetched and processed.
-
-\subsection{Concurrency}
-\label{sec:concurrency}
-Concurrency is achieved through PySpark's partitioning of the pixel DataFrame and parallel execution across executors. The tables show that parallelism in Spark and the number of executors remain consistent across methods, but Concurrent and Query modes leverage additional parallelism at the scene fetch stage, as confirmed by the concurrency_ratio and task executor metrics in pipeline_run_analysis.txt. This enables higher throughput and more efficient resource utilization, especially for large datasets.
-
-\subsection{Query Efficiency}
-\label{sec:query_efficiency}
-Query efficiency is measured by the time required to identify relevant scenes for processing. As shown in Table~\ref{tab:three_dataset_comparison} and Table~\ref{tab:fetching_metrics_comparison}, query latency is minimized in Query mode when filtering is effective, but can be higher than S3 listing when the full archive is needed. The use of spatial and temporal filtering, as well as database indexing, is critical for maximizing efficiency, as discussed in pipeline_run_analysis.txt Section 4.3.
-
-\subsubsection{Comparison of Scene Fetching Methods}
 \begin{table}[H]
 \centering
 \small
@@ -72,7 +45,7 @@ Query efficiency is measured by the time required to identify relevant scenes fo
 \hline
 \textbf{Metric} & \textbf{Serial} & \textbf{Concurrent} & \textbf{Query (DB)} \\
 \hline
-Scene source & S3 prefix list & S3 prefix list & PostGIS index \\
+% Scene source & S3 prefix list & S3 prefix list & PostGIS index \\
 Scenes fetched & 109 & 109 & 74 (32\% fewer) \\
 Latency & 0.65 & 0.64 & 0.37s \\
 Scenes Fetched per sec & 168.38 & 171.2 & 198.43 \\
@@ -93,9 +66,9 @@ Parallelism in Spark & 48 & 48 & 48 \\
 \hline
 \textbf{Metric} & \textbf{Serial} & \textbf{Concurrent} & \textbf{Query} \\
 \hline
-Scene source & S3 prefix list & S3 prefix list & PostGIS index \\
+% Scene source & S3 prefix list & S3 prefix list & PostGIS index \\
 Scenes fetched & 109 & 109 & 109 \\
-Latency & 0.68 & 0.69 & 1.64s \\
+Latency(s) & 0.68 & 0.69 & 1.64 \\
 Scenes Fetched per sec & 161.19 & 159.06 & 66.32 \\
 Scene read method & Sequential loop & 24 parallel threads & 24 parallel threads \\
 Data window & ALL in folder & ALL in folder & ALL in folder \\
@@ -108,11 +81,26 @@ Parallelism in Spark & 48 & 48 & 48 \\
 \end{table}
 \label{sec:scene_fetch_comparison}
 
+\label{sec:scene_fetch_comparison}
+
+Table~\ref{tab:fetching_metrics_comparison} and Table~\ref{tab:fetching_results_full_timeframe} compare the three scene discovery and fetching strategies: Serial, Concurrent, and Query modes. These tables present key metrics for both a filtered (date-restricted) and full-archive scenario.
+
+The Serial mode is the simplest and guarantees scene order, but is slowest for large archives due to lack of parallelism. Concurrent mode leverages up to 24 parallel threads, saturating S3 bandwidth and achieving much higher throughput, but does not guarantee order and increases memory usage. Query mode, when the query window is restricted, can fetch significantly fewer scenes and achieve the fastest discovery (see Table~\ref{tab:fetching_metrics_comparison}). However, when the query window covers the full archive, Query mode is actually slower than S3 listing due to database overhead (see Table~\ref{tab:fetching_results_full_timeframe} and Section 4.3). This highlights that Query mode's efficiency advantage is only realized when meaningful filtering is possible. All three methods achieve identical analytical results (see Section 6.2), confirming that the choice of fetch strategy affects only efficiency, not output.
+
+
+\subsection{Scalability}
+\label{sec:scalability}
+The pipeline demonstrates strong scalability across both dataset size and scene fetching method. As shown in Table~\ref{tab:three_dataset_comparison}, throughput (scenes/sec) and total pipeline time scale as expected with the number of scenes and the method used. The pipeline maintains stable throughput across increasing data volumes, and the choice of scene fetching method (Table~\ref{tab:fetching_metrics_comparison}, Table~\ref{tab:fetching_results_full_timeframe}) can further optimize performance for specific scenarios. Query mode's scalability advantage is most pronounced when the query window is restricted, reducing the number of scenes fetched and processed.
+
+% \subsection{Concurrency}
+% \label{sec:concurrency}
+% Concurrency is achieved through PySpark's partitioning of the pixel DataFrame and parallel execution across executors. The tables show that parallelism in Spark and the number of executors remain consistent across methods, but Concurrent and Query modes leverage additional parallelism at the scene fetch stage. This enables higher throughput and more efficient resource utilization, especially for large datasets.
+
+\subsection{Query Efficiency}
+\label{sec:query_efficiency}
+Query efficiency is measured by the time required to identify relevant scenes for processing. As shown in Table~\ref{tab:three_dataset_comparison} and Table~\ref{tab:fetching_metrics_comparison}, query latency is minimized in Query mode when filtering is effective, but can be higher than S3 listing when the full archive is needed. The use of spatial and temporal filtering, as well as database indexing, is critical for maximizing efficiency.
+
 
 \subsection{Concurrency}
 
 During NDVI/NDMI computation, PySpark partitions the pixel DataFrame across available executors. Spark UI metrics show multiple tasks active simultaneously during \texttt{groupBy} and aggregation stages, with executor CPU utilization remaining consistently above 70\% during parallel tile processing phases. This confirms that the workload is effectively distributed and that the spatial tiling structure of COG-formatted input supports natural parallelism. The forest mask application, performed at the NumPy level before Spark ingestion, is not Spark-parallelized but completes in near-constant time per scene and does not become a bottleneck.
-
-\subsection{Query Efficiency}
-
-Spatiotemporal queries are executed both with and without the GIST spatial index. With the GIST index enabled, query execution time for the full Boulder County study area over a decade-scale archive is measured at approximately 12--18\,ms. Without the GIST index (after dropping \texttt{idx\_vegetation\_geom}), the same query requires a full sequential scan taking 280--450\,ms—a 15--25$\times$ speedup directly attributable to GIST indexing. The \texttt{EXPLAIN ANALYZE} query plan confirms use of an Index Scan on \texttt{idx\_vegetation\_geom} rather than a Sequential Scan when the index is active. For narrower temporal ranges (single year versus full archive), query times increase gradually rather than sharply, consistent with $O(\log N)$ index lookup behavior.

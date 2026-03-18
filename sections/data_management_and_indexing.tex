@@ -27,7 +27,7 @@ Benchmark tests during ingestion show a $1.5$--$2.0\times$ read speedup when que
 
 \subsection{Spatial and Temporal Indexing}
 
-Three indexes are created on the \texttt{vegetation\_metadata} table. First, a GIST spatial index on the \texttt{geom} column (\texttt{idx\_vegetation\_geom}) enables fast \texttt{ST\_Intersects} bounding box filtering. Second, a B-tree temporal index on \texttt{acquisition\_date} (\texttt{idx\_vegetation\_date}) supports efficient date-range queries. Third, a composite index on (\texttt{tile\_id}, \texttt{acquisition\_date}) accelerates tile-specific lookups. The GIST index is the critical performance enabler for the spatiotemporal query that identifies candidate COG scenes for a user-specified region and time window, as demonstrated quantitatively. 
+Three indexes are created on the \texttt{vegetation\_metadata} table. First, a GIST spatial index on the \texttt{geom} column (\texttt{idx\_vegetation\_geom}) enables fast \texttt{ST\_Intersects} bounding box filtering. Second, a B-tree temporal index on \texttt{acquisition\_date} (\texttt{idx\_vegetation\_date}) supports efficient date-range queries. Third, a composite index on (\texttt{tile\_id}, \texttt{acquisition\_date}) accelerates tile-specific lookups. The GIST index is the critical performance enabler for the spatiotemporal query that identifies candidate COG scenes for a user-specified time window, as demonstrated quantitatively. 
 
 \subsection{Spatiotemporal Data Cube Index}
 
