@@ -1,7 +1,7 @@
 \section{High Level Overview}
 This project builds a scalable end-to-end pipeline for detecting vegetation stress preceding Mountain Pine Beetle outbreaks in Boulder County, Colorado. Satellite imagery from three independent datasets is ingested, indexed, transformed, and analyzed using a combination of AWS S3, PostgreSQL/PostGIS, and Apache PySpark. The pipeline is designed so that the full archive is always query able, but only the data relevant to a specific spatiotemporal window is ever loaded into memory.
 \begin{itemize}
-    \item \textbf{Data Collection} --- Data collection using Google Earth Engine using  and ESA World Cover Datasets
+    \item \textbf{Data Sources and Study Context} --- Data collection using Google Earth Engine and ESA World Cover Datasets
     \item \textbf{Data Ingestion and Storage} --- Satellite imagery is exported from Google Earth Engine as Cloud Optimized GeoTIFFs and stored in AWS S3 with internal tiling and LZW compression to enable efficient byte-range reads.
     \item \textbf{Metadata Indexing in PostGIS} --- A PostgreSQL/PostGIS database indexes each scene's spatial geometry, acquisition date, and S3 URL using GIST and B-tree indexes to support sub-millisecond spatiotemporal filtering.
     \item \textbf{Data Transformation Pipeline} --- Matching scene URLs are retrieved from PostGIS, band arrays are streamed directly from S3 COGs, forest-masked at the NumPy level, and aggregated into monthly NDVI/NDMI composites in PySpark.
