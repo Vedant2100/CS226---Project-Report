@@ -52,12 +52,12 @@ To evaluate scalability, the ETL pipeline is executed on progressively increasin
 \textbf{Metric} & \textbf{Serial} & \textbf{Concurrent} & \textbf{Query (DB)} \\
 \hline
 Scene source & S3 prefix list & S3 prefix list & PostGIS index \\
-Scenes fetched & 109 & 109 & \cellcolor{green!10}74 (32\% fewer) \\
-Latency & 0.65 & 0.64 & \cellcolor{green!10}0.37s \\
-Scenes Fetched per sec & 168.38 & 171.2 & \cellcolor{green!10}198.43 \\
+Scenes fetched & 109 & 109 & 74 (32\% fewer) \\
+Latency & 0.65 & 0.64 & 0.37s \\
+Scenes Fetched per sec & 168.38 & 171.2 & 198.43 \\
 Scene read method & Sequential loop & 24 parallel threads & 24 parallel threads \\
-Data window & ALL in folder & ALL in folder & \cellcolor{green!10}2019-01 $\rightarrow$ 2022-12 \\
-Baseline months & All pre-eval & All pre-eval & \cellcolor{green!10}40 months \\
+Data window & ALL in folder & ALL in folder & 2019-01 $\rightarrow$ 2022-12 \\
+Baseline months & All pre-eval & All pre-eval & 40 months \\
 Parallelism in Spark & 48 & 48 & 48 \\
 \hline
 \end{tabular}
@@ -73,12 +73,12 @@ Parallelism in Spark & 48 & 48 & 48 \\
 \textbf{Metric} & \textbf{Serial} & \textbf{Concurrent} & \textbf{Query} \\
 \hline
 Scene source & S3 prefix list & S3 prefix list & PostGIS index \\
-Scenes fetched & 109 & 109 & \cellcolor{yellow!10}109 \\
-Latency & 0.68 & 0.69 & \cellcolor{yellow!10}1.64s \\
-Scenes Fetched per sec & 161.19 & 159.06 & \cellcolor{yellow!10}66.32 \\
+Scenes fetched & 109 & 109 & 109 \\
+Latency & 0.68 & 0.69 & 1.64s \\
+Scenes Fetched per sec & 161.19 & 159.06 & 66.32 \\
 Scene read method & Sequential loop & 24 parallel threads & 24 parallel threads \\
-Data window & ALL in folder & ALL in folder & \cellcolor{yellow!10}ALL in folder \\
-Task Executor ms & 5325 & 5128 & \cellcolor{orange!10}6664 \\
+Data window & ALL in folder & ALL in folder & ALL in folder \\
+Task Executor ms & 5325 & 5128 & 6664 \\
 Parallelism in Spark & 48 & 48 & 48 \\
 \hline
 \end{tabular}
@@ -86,24 +86,6 @@ Parallelism in Spark & 48 & 48 & 48 \\
 \label{tab:fetching_results_full_timeframe}
 \end{table}
 \label{sec:scene_fetch_comparison}
-We compared three scene discovery and fetching strategies: Serial, Concurrent, and Query modes. Each method was evaluated for scalability, parallelism, and efficiency using both pipeline logs and summary metrics (see screenshots and pipeline\_run\_analysis.txt for details).
-
-\textbf{Serial Mode:} Scans the S3 prefix sequentially, reading one scene at a time. Guarantees order and is simplest to debug, but is slowest for large archives due to lack of parallelism.
-
-\textbf{Concurrent Mode:} Uses a thread pool to read up to 24 scenes in parallel from S3. This saturates S3 bandwidth and achieves up to 24x faster scene reads, but does not guarantee order and increases memory usage.
-
-\textbf{Query Mode:} Queries a PostGIS database to return only relevant S3 URLs, then reads scenes concurrently. This mode is fastest when the query window filters out irrelevant scenes, but can be slower than S3 listing when the full archive is needed due to database overhead.
-
-\textit{Key metrics:}
-\begin{itemize}
-	\item \textbf{Scenes fetched:} Query mode can fetch fewer scenes (e.g., 74 vs 109) when the date window is restricted, improving efficiency.
-	\item \textbf{Latency:} Query mode is fastest (0.37s) when filtering is effective, but slower (1.64s) than S3 listing when fetching the full archive.
-	\item \textbf{Throughput:} Concurrent and Query modes achieve higher scenes/sec when parallelism is leveraged.
-	\item \textbf{Order:} Only Serial mode guarantees chronological order.
-	\item \textbf{Memory:} Concurrent and Query modes use more memory due to parallel reads.
-\end{itemize}
-
-\textit{Summary:} For full-archive analyses, S3 prefix listing (Serial/Concurrent) is faster. For targeted analyses, Query mode avoids unnecessary data loading and is more efficient. The choice of method should be guided by the analysis window and dataset size.
 
 
 \subsection{Concurrency}
